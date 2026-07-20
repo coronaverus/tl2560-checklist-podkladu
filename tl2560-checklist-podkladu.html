@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TL25.60 — checklist podkladů produktové stránky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1d21; --paper:#f4f3ef; --panel:#ffffff; --line:#d9d6cf; --muted:#6b6f76;
+    --accent:#e85d04;
+    --ok:#2f7d4f; --ok-bg:#eef6f0;
+    --wip:#b26a00; --wip-bg:#fdf3e3;
+    --miss:#b3372b; --miss-bg:#fbeeec;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; font-size:14.5px; line-height:1.5;}
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px 80px;}
+
+  header.hero{border-bottom:3px solid var(--ink); padding:40px 0 24px; margin-bottom:20px;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600;}
+  h1{font-family:'Archivo',sans-serif; font-weight:800; font-size:clamp(26px,4.5vw,38px); line-height:1.08; margin:10px 0 12px; letter-spacing:-.01em;}
+  .hero p{max-width:640px; color:var(--muted); font-size:14px;}
+
+  /* progress gauge */
+  .gauge{margin:20px 0 6px;}
+  .gauge .bar{display:flex; height:14px; border-radius:7px; overflow:hidden; border:1px solid var(--line); background:#fff;}
+  .gauge .seg{transition:width .25s;}
+  .seg.ok{background:var(--ok);} .seg.wip{background:var(--wip);} .seg.miss{background:var(--miss);}
+  .gauge .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  .legend b{font-weight:600;}
+  .legend .l-ok{color:var(--ok);} .legend .l-wip{color:var(--wip);} .legend .l-miss{color:var(--miss);}
+
+  .filters{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 10px;}
+  .fchip{border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 14px; font-size:13px; cursor:pointer; user-select:none;}
+  .fchip.on{background:var(--ink); border-color:var(--ink); color:#fff;}
+
+  .group{margin:26px 0 6px;}
+  .group h2{font-family:'Archivo',sans-serif; font-weight:700; font-size:16px; letter-spacing:.02em; text-transform:uppercase; color:var(--ink); border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:10px;}
+
+  .item{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:13px 16px; margin:8px 0;
+    display:grid; grid-template-columns:130px 1fr 190px; gap:14px; align-items:start;}
+  @media(max-width:720px){ .item{grid-template-columns:1fr;} }
+  .status{font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    border-radius:5px; padding:7px 0; text-align:center; cursor:pointer; border:1.5px solid transparent; user-select:none; width:130px;}
+  .status[data-s="ok"]{color:var(--ok); background:var(--ok-bg); border-color:var(--ok);}
+  .status[data-s="wip"]{color:var(--wip); background:var(--wip-bg); border-color:var(--wip);}
+  .status[data-s="miss"]{color:var(--miss); background:var(--miss-bg); border-color:var(--miss);}
+  .item .name{font-weight:600; font-size:14px;}
+  .item .note{color:var(--muted); font-size:12.5px; margin-top:2px;}
+  .item .owner{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink); background:#f0efe9; border-radius:5px; padding:6px 10px; justify-self:end; align-self:center; white-space:nowrap;}
+  @media(max-width:720px){ .item .owner{justify-self:start;} }
+  .item.hidden{display:none;}
+
+  .footerbar{margin-top:34px; border-top:3px solid var(--ink); padding-top:22px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;}
+  .btn-main{font-family:'Archivo',sans-serif; font-weight:700; font-size:15px; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:13px 22px; cursor:pointer;}
+  .btn-main:hover{filter:brightness(.93);}
+  .toast{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ok); font-weight:600; opacity:0; transition:opacity .2s;}
+  .toast.show{opacity:1;}
+  .note-f{font-size:12.5px; color:var(--muted); max-width:430px;}
+  button:focus-visible,.fchip:focus-visible,.status:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Interní nástroj · produktová stránka bobcat.com</div>
+  <h1>TL25.60 — inventura podkladů</h1>
+  <p>Živý přehled, co pro stavbu stránky máme, co se zpracovává a co chybí. Kliknutím na štítek stavu přepínáte: <b>máme → zpracovat → chybí</b>. Souhrn se dá zkopírovat a poslat klientovi jako požadavek na dodání.</p>
+</header>
+
+<div class="gauge">
+  <div class="bar"><div class="seg ok" id="segOk"></div><div class="seg wip" id="segWip"></div><div class="seg miss" id="segMiss"></div></div>
+  <div class="legend">
+    <span class="l-ok"><b id="cOk">0</b> máme</span>
+    <span class="l-wip"><b id="cWip">0</b> ke zpracování</span>
+    <span class="l-miss"><b id="cMiss">0</b> chybí</span>
+  </div>
+</div>
+
+<div class="filters" id="filters">
+  <div class="fchip on" data-f="all" tabindex="0">Vše</div>
+  <div class="fchip" data-f="ok" tabindex="0">Máme</div>
+  <div class="fchip" data-f="wip" tabindex="0">Ke zpracování</div>
+  <div class="fchip" data-f="miss" tabindex="0">Chybí</div>
+</div>
+
+<div id="list"></div>
+
+<div class="footerbar">
+  <button class="btn-main" id="copyBtn">Zkopírovat souhrn</button>
+  <span class="toast" id="toast">Zkopírováno.</span>
+  <span class="note-f">Stavy se drží jen po dobu otevřené stránky — po aktualizaci souhrn zkopírujte, ať o změny nepřijdete.</span>
+</div>
+
+</div>
+<script>
+  const DATA=[
+    {g:'Texty', items:[
+      {n:'Hlavní a krátký popis modelu', o:'Copy.xlsx', note:'List „Copy" — hotové, k převzetí.', s:'ok'},
+      {n:'Overview text', o:'Copy.xlsx', note:'Hotový, k převzetí.', s:'ok'},
+      {n:'Texty featur (17 položek)', o:'copywriter', note:'Zapracovat komentáře produkťáka: upravit / vyřadit / roztřídit do kategorií.', s:'wip'},
+      {n:'Texty 3 benefit bloků', o:'copywriter', note:'V podkladech nejsou — nový copywriting nad schválenými specifikacemi.', s:'miss'},
+      {n:'Právní poznámky per trh (IT, DE…)', o:'produktový manažer', note:'Součást specifikací — nutná validace klientem.', s:'miss'},
+    ]},
+    {g:'Data', items:[
+      {n:'Kompletní tabulky specifikací', o:'klient / produktová data', note:'Vyžádat export — nepřepisovat ručně.', s:'miss'},
+      {n:'Load charty (EN 1459, dle pneumatik)', o:'produktový tým', note:'Nutné pro sekci nosnostních diagramů.', s:'miss'},
+      {n:'5 klíčových parametrů pro hero', o:'klient potvrdí', note:'Výběr ze specifikací (nosnost, zdvih, výkon, dosah, hmotnost).', s:'miss'},
+      {n:'Seznam attachmentů (~34)', o:'PM zpracuje', note:'Opravit názvy dle komentářů; 2 položky „doplnit později" → plán aktualizací.', s:'wip'},
+      {n:'Data pro srovnávač modelů', o:'CMS / specifikace', note:'Zařazení do řady telehandlerů.', s:'miss'},
+    ]},
+    {g:'Assety', items:[
+      {n:'Studiové fotky (celek, kabina)', o:'složka', note:'Hero a galerie — k dispozici.', s:'ok'},
+      {n:'Akční fotky dle use-casů', o:'složka', note:'Stavebniny, staveniště, dřevo, čištění, zahradnictví, vrták, attachmenty.', s:'ok'},
+      {n:'Mapování fotka ↔ sekce stránky', o:'PM zpracuje', note:'Duplicity, dvojité názvy, featury bez fotky → mapovací tabulka.', s:'wip'},
+      {n:'2 produktová videa (YouTube)', o:'Copy.xlsx', note:'Introduction + jobsite — linky k dispozici.', s:'ok'},
+      {n:'Brožura PDF (Download Brochure)', o:'klient', note:'CTA na stránce bez ní nemá kam vést.', s:'miss'},
+    ]},
+    {g:'SEO a technika', items:[
+      {n:'Klíčová slova, title, meta, alt texty', o:'SEO specialista', note:'Dodat před finalizací textů.', s:'miss'},
+      {n:'URL a interní prolinkování', o:'SEO + CMS', note:'Dle vzoru /equipment/telehandlers/…, odkazy na kategorii a attachmenty.', s:'miss'},
+      {n:'Šablona produktové stránky v CMS', o:'web tým', note:'Ověřit, že existuje a je aktuální — určuje harmonogram.', s:'wip'},
+    ]},
+  ];
+  const ORDER=['ok','wip','miss'];
+  const LABEL={ok:'✓ Máme', wip:'✎ Zpracovat', miss:'! Chybí'};
+  const list=document.getElementById('list');
+  DATA.forEach(gr=>{
+    const g=document.createElement('div'); g.className='group';
+    g.innerHTML='<h2>'+gr.g+'</h2>';
+    gr.items.forEach(it=>{
+      const d=document.createElement('div'); d.className='item'; d.dataset.s=it.s;
+      d.innerHTML='<div class="status" tabindex="0" data-s="'+it.s+'">'+LABEL[it.s]+'</div>'+
+        '<div><div class="name">'+it.n+'</div><div class="note">'+it.note+'</div></div>'+
+        '<div class="owner">'+it.o+'</div>';
+      g.appendChild(d);
+    });
+    list.appendChild(g);
+  });
+  function refresh(){
+    const items=[...document.querySelectorAll('.item')];
+    const c={ok:0,wip:0,miss:0};
+    items.forEach(i=>c[i.dataset.s]++);
+    const total=items.length;
+    document.getElementById('cOk').textContent=c.ok;
+    document.getElementById('cWip').textContent=c.wip;
+    document.getElementById('cMiss').textContent=c.miss;
+    document.getElementById('segOk').style.width=(c.ok/total*100)+'%';
+    document.getElementById('segWip').style.width=(c.wip/total*100)+'%';
+    document.getElementById('segMiss').style.width=(c.miss/total*100)+'%';
+  }
+  function cycle(el){
+    const item=el.closest('.item');
+    const next=ORDER[(ORDER.indexOf(item.dataset.s)+1)%3];
+    item.dataset.s=next; el.dataset.s=next; el.textContent=LABEL[next];
+    refresh(); applyFilter();
+  }
+  document.addEventListener('click',e=>{ if(e.target.classList.contains('status')) cycle(e.target); });
+  document.addEventListener('keydown',e=>{ if(e.target.classList.contains('status')&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); cycle(e.target);} });
+  let filter='all';
+  function applyFilter(){
+    document.querySelectorAll('.item').forEach(i=>{
+      i.classList.toggle('hidden', filter!=='all' && i.dataset.s!==filter);
+    });
+  }
+  document.querySelectorAll('.fchip').forEach(f=>{
+    const act=()=>{document.querySelectorAll('.fchip').forEach(x=>x.classList.remove('on')); f.classList.add('on'); filter=f.dataset.f; applyFilter();};
+    f.addEventListener('click',act);
+    f.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}});
+  });
+  document.getElementById('copyBtn').addEventListener('click',async()=>{
+    let out=['TL25.60 — INVENTURA PODKLADŮ','============================',''];
+    document.querySelectorAll('.group').forEach(g=>{
+      out.push(g.querySelector('h2').textContent.toUpperCase());
+      g.querySelectorAll('.item').forEach(i=>{
+        const st={ok:'MÁME',wip:'KE ZPRACOVÁNÍ',miss:'CHYBÍ'}[i.dataset.s];
+        out.push('  ['+st+'] '+i.querySelector('.name').textContent+' — '+i.querySelector('.owner').textContent);
+      });
+      out.push('');
+    });
+    const text=out.join('\n');
+    try{ await navigator.clipboard.writeText(text); }
+    catch(e){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+    const toast=document.getElementById('toast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2500);
+  });
+  refresh();
+</script>
+</body>
+</html>
